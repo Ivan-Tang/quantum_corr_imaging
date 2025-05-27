@@ -30,6 +30,15 @@ class GhostImagingDataset(Dataset):
         img_flatten_size = img_size[0] * img_size[1]
         self.Phi = np.random.randn(compress_dim, img_flatten_size).astype(np.float32)
 
+        if split == 'train':
+            self.transform = transforms.Compose([
+                transforms.RandomRotation(15),
+                transforms.RandomHorizontalFlip(),
+                transforms.Resize(img_size),
+                transforms.toTensor(),
+            ])
+
+
     def __len__(self):
         return len(self.object_dirs)
 

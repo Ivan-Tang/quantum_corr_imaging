@@ -4,9 +4,6 @@ from dataset import GhostImagingDataset
 from model import CompressiveImagingModel
 import torch.nn as nn
 
-# =====================
-# 配置区（超参数集中管理）
-# =====================
 config = {
     'root_dir': 'data/train',
     'img_size': (512, 384),
@@ -15,7 +12,7 @@ config = {
     'n_heads': 4,
     'n_layers': 2,
     'output_size': 512 * 384,
-    'epochs': 10,
+    'epochs': 50,
     'learning_rate': 1e-3,
     'keep_ratio': 0.2,
     'batch_size': 1

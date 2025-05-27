@@ -19,11 +19,19 @@ class CompressiveImagingModel(nn.Module):
             nn.Softmax(dim=1)
         )
 
+        # 卷积解码器：先升维成特征图，再用转置卷积还原空间结构
+        self.fc = nn.Linear(input_dim, 128 * 16 * 12)  # 128通道，16x12特征图
         self.decoder = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
+            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),  # 32x24
             nn.ReLU(),
-            nn.Linear(hidden_dim, output_size),
-            nn.Sigmoid() 
+            nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1),   # 64x48
+            nn.ReLU(),
+            nn.ConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1),   # 128x96
+            nn.ReLU(),
+            nn.ConvTranspose2d(16, 8, kernel_size=4, stride=2, padding=1),    # 256x192
+            nn.ReLU(),
+            nn.ConvTranspose2d(8, 1, kernel_size=4, stride=2, padding=1),     # 512x384
+            nn.Sigmoid()
         )
 
     def forward(self, x, mask=None):
@@ -33,7 +41,9 @@ class CompressiveImagingModel(nn.Module):
         encoded = self.encoder(x)
 
         attn_weights = self.attn_pool(encoded)
-        pooled = torch.sum(attn_weights * encoded, dim=1)
+        pooled = torch.sum(attn_weights * encoded, dim=1)  # [B, input_dim]
 
-        out = self.decoder(pooled)
-        return out.view(-1, 1, 512, 384)
+        feat = self.fc(pooled)  # [B, 128*16*12]
+        feat = feat.view(-1, 128, 16, 12)  # [B, 128, 16, 12]
+        out = self.decoder(feat)  # [B, 1, 512, 384]
+        return out
