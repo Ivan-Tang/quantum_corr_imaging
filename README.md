@@ -77,11 +77,11 @@ python code/metric.py
 #### 信号过强
 先确定相机编号，再降低对应相机的Brightness。
 #### 拍摄缓慢
-以MindVision工业相机为例：停止 takejpg.m ，打开 `Camera1_Photos、Camera2_Photos
+以MindVision工业相机为例：停止 `takejpg.m `，打开  `Camera1_Photos、Camera2_Photos`
 1. 如果图片中间出现黑线，打开 MVDCP ，反复重启相机，直到预览界面中图片恢复正常。
 2. 如果图片全黑，重连相机后再运行。
 #### 摄像头被其他程序占用
-1. 关闭MATLAB2015B，关闭MVDCP。再重新运行takejpg.m。
+1. 关闭MATLAB2015B，关闭MVDCP。再重新运行`takejpg.m`。
 2. 打开设备管理器，卸载摄像机驱动，重启电脑。
 3. Windows更新可能占用摄像机。关闭Windows更新。
 
