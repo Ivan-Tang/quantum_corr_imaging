@@ -66,6 +66,24 @@ python code/metric.py
 - 可根据实际需求调整 `train.py` 和 `metric.py` 中的超参数。
 - 支持自定义mask采样比例、全观测/稀疏观测等多种实验场景。
 - 如需更复杂的模型结构（如UNet、卷积解码器等），可在 `model.py` 基础上扩展。
+## 数据集制作指南
+
+### 安装依赖
+
+建议使用MATLAB2015B，必须安装**Image Acquisition Toolbox**
+
+### 常见问题说明
+
+#### 信号过强
+先确定相机编号，再降低对应相机的Brightness。
+#### 拍摄缓慢
+以MindVision工业相机为例：停止 takejpg.m ，打开 `Camera1_Photos、Camera2_Photos
+1. 如果图片中间出现黑线，打开 MVDCP ，反复重启相机，直到预览界面中图片恢复正常。
+2. 如果图片全黑，重连相机后再运行。
+#### 摄像头被其他程序占用
+1. 关闭MATLAB2015B，关闭MVDCP。再重新运行takejpg.m。
+2. 打开设备管理器，卸载摄像机驱动，重启电脑。
+3. Windows更新可能占用摄像机。关闭Windows更新。
 
 ---
 如有问题欢迎联系或提交 issue。
