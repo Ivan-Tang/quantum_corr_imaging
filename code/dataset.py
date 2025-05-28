@@ -35,7 +35,12 @@ class GhostImagingDataset(Dataset):
                 transforms.RandomRotation(15),
                 transforms.RandomHorizontalFlip(),
                 transforms.Resize(img_size),
-                transforms.toTensor(),
+                transforms.ToTensor(),
+            ])
+        else:
+            self.transform = transforms.Compose([
+                transforms.Resize(img_size),
+                transforms.ToTensor(),
             ])
 
 
