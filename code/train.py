@@ -31,11 +31,10 @@ config = {
 config['in_channels'] = (config['max_signal'] // config['stack_num']) + (config['max_idler'] // config['stack_num'])
 
 def train(config, return_best_val_loss=False, trial=None):
-    # 自动生成实验名，包含主要参数
     exp_name = f"exp_{time.strftime('%Y%m%d_%H%M%S')}_epochs{config['epochs']}_stack{config['stack_num']}_lr{config['learning_rate']}_sig{config['max_signal']}"
     exp_dir = os.path.join('results', exp_name)
     os.makedirs(exp_dir, exist_ok=True)
-    # 保存config参数
+
     with open(os.path.join(exp_dir, 'config.json'), 'w') as f:
         json.dump(config, f, indent=2)
 
@@ -92,7 +91,7 @@ def train(config, return_best_val_loss=False, trial=None):
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
-            train_psnr += psnr(output, target).cpu().item()
+            train_psnr += float(psnr(output, target).cpu().item())
         train_loss /= len(train_loader)
         train_psnr /= len(train_loader)
 
@@ -105,20 +104,20 @@ def train(config, return_best_val_loss=False, trial=None):
                 output = model(X)
                 loss = loss_fn(output, target)
                 val_loss += loss.item()
-                val_psnr += psnr(output, target).cpu().item()
+                val_psnr += float(psnr(output, target).cpu().item())
         val_loss /= len(val_loader)
         val_psnr /= len(val_loader)
 
-        #optuna pruner
+        # optuna pruner
         if trial is not None:
             trial.report(val_loss, epoch)
             if trial.should_prune():
                 print(f"Trial pruned at epoch {epoch+1}")
                 raise optuna.TrialPruned()
-            
+
         print(f"Epoch [{epoch + 1}/{config['epochs']}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
         losses.append((train_loss, val_loss))
-        psnrs.append((train_psnr, val_psnr))
+        psnrs.append((float(train_psnr), float(val_psnr)))
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
