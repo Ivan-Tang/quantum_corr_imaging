@@ -6,6 +6,8 @@ import os
 import matplotlib.pyplot as plt
 from torchvision.utils import save_image
 
+
+
 def predict_and_save(test_root_dir, img_size, model_path, save_dir):
     os.makedirs(save_dir, exist_ok=True)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

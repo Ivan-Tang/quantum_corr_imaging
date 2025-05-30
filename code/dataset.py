@@ -6,7 +6,7 @@ from torchvision import transforms
 from PIL import Image
 
 class GhostImagingDataset(Dataset):
-    def __init__(self, root_dir, img_size=(512, 384), compress_dim=100, keep_ratio=0.05, split='train', split_ratio=0.8):
+    def __init__(self, root_dir, img_size=(512, 384), compress_dim=100, keep_ratio=0.05, split='train', split_ratio=0.8, stack_num = 5):
         """
         root_dir: 形如 data/dataset/train，每个子文件夹为一个物体，内含 signal/、idler/、target.JPG
         split: 'train' 或 'val'，决定返回每个物体的前 split_ratio 还是后 1-split_ratio 部分数据
@@ -22,6 +22,7 @@ class GhostImagingDataset(Dataset):
         self.keep_ratio = keep_ratio
         self.split = split
         self.split_ratio = split_ratio
+        self.stack_num = stack_num
         self.transform = transforms.Compose([
             transforms.Resize(img_size),
             transforms.ToTensor()
@@ -57,6 +58,7 @@ class GhostImagingDataset(Dataset):
             os.path.join(signal_dir, f) for f in os.listdir(signal_dir)
             if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp'))
         ])
+        # 读取 idler
         idler_paths = sorted([
             os.path.join(idler_dir, f) for f in os.listdir(idler_dir)
             if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp'))
@@ -73,17 +75,26 @@ class GhostImagingDataset(Dataset):
             idler_paths = idler_paths[split_idx:]
         # 读取 signal 图像
         X_raw = []
-        for path in signal_paths:
-            img = Image.open(path).convert("L")
-            img = self.transform(img).view(-1)
-            X_raw.append(img)
+        # 每stack_num叠加
+        for i in range(0, len(signal_paths), self.stack_num):
+            imgs = []
+            for path in signal_paths[i:i+self.stack_num]:
+                img = Image.open(path).convert('L')
+                img = self.transform(img).view(-1) #变换
+                imgs.append(img)
+            if imgs:
+                stacked = torch.stack(imgs, dim=0).sum(dim=0)
+                X_raw.append(stacked)
+
         X_raw = torch.stack(X_raw, dim=0)  # [N, H*W]
         X_comp = torch.matmul(torch.from_numpy(self.Phi), X_raw.T).T  # [N, compress_dim]
         # 读取 idler 图像
-        mask = torch.zeros(len(signal_paths))
-        num_keep = int(self.keep_ratio * len(signal_paths))
-        keep_indices = np.random.choice(len(signal_paths), num_keep, replace=False)
+
+        mask = torch.zeros(len(X_raw))
+        num_keep = int(self.keep_ratio * len(X_raw))
+        keep_indices = np.random.choice(len(X_raw), num_keep, replace=False)
         mask[keep_indices] = 1.0
+        
         # 读取 target
         target = self.transform(Image.open(target_path).convert("L")).float()  # [1, H, W]
         return X_comp.float(), mask, target

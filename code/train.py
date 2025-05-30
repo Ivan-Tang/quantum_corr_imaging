@@ -3,6 +3,11 @@ from torch.utils.data import DataLoader
 from dataset import GhostImagingDataset
 from model import CompressiveImagingModel
 import torch.nn as nn
+from torchmetrics.functional import structural_similarity_index_measure as ssim
+from torchmetrics.functional import peak_signal_noise_ratio as psnr
+
+
+
 
 config = {
     'root_dir': 'data/train',
@@ -15,13 +20,23 @@ config = {
     'epochs': 50,
     'learning_rate': 1e-3,
     'keep_ratio': 0.2,
-    'batch_size': 1
+    'stack_num': 5,
+    'batch_size': 1,
+    'loss_weight_psnr': 1,
+    'loss_weight_ssim': 1
 }
+
+def loss_fn(output, target):
+    B = output.shape[0]
+    H, W = config['img_size']
+    output = output.view(B, 1, H, W)
+    loss = config['loss_weight_ssim'] * (1 - ssim(output, target)) + config['loss_weight_psnr'] * psnr(output, target)
+    return loss
 
 def train():
     # 加载训练集和验证集
-    train_dataset = GhostImagingDataset(config['root_dir'], config['img_size'], keep_ratio=config['keep_ratio'], split='train')
-    val_dataset = GhostImagingDataset(config['root_dir'], config['img_size'], keep_ratio=config['keep_ratio'], split='val')
+    train_dataset = GhostImagingDataset(config['root_dir'], config['img_size'], keep_ratio=config['keep_ratio'], split='train', stack_num=config['stack_num'])
+    val_dataset = GhostImagingDataset(config['root_dir'], config['img_size'], keep_ratio=config['keep_ratio'], split='val', stack_num=config['stack_num'])
 
     train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False)
@@ -40,7 +55,6 @@ def train():
 
     model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=config['learning_rate'])
-    loss_fn = nn.MSELoss()
 
     best_val_loss = float('inf')
 
@@ -69,6 +83,7 @@ def train():
                 X, mask, target = X.to(device), mask.to(device), target.to(device)
 
                 output = model(X, mask)
+
                 loss = loss_fn(output, target)
 
                 val_loss += loss.item()
