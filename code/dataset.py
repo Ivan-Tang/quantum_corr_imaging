@@ -72,8 +72,22 @@ class GhostImagingDataset(Dataset):
             img = Image.open(path).convert('L')
             img = self.transform(img)
             idler_imgs.append(img)
+        # 预叠加：每stack_num张合成一张（均值）
+        def stack_and_merge(imgs, stack_num):
+            merged = []
+            for i in range(0, len(imgs), stack_num):
+                group = imgs[i:i+stack_num]
+                if len(group) < stack_num:
+                    # 不足stack_num的丢弃
+                    continue
+                group_tensor = torch.stack(group, dim=0)  # [stack_num, 1, H, W]
+                merged_img = group_tensor.sum(dim=0)  # [1, H, W]
+                merged.append(merged_img)
+            return merged
+        signal_merged = stack_and_merge(signal_imgs, self.stack_num)
+        idler_merged = stack_and_merge(idler_imgs, self.stack_num)
         # 堆叠为多通道输入
-        X = torch.cat(signal_imgs + idler_imgs, dim=0)  # [C, H, W], C=max_signal+max_idler
+        X = torch.cat(signal_merged + idler_merged, dim=0)  # [C, H, W], C=(max_signal//stack_num)+(max_idler//stack_num)
         target = self.transform(Image.open(target_path).convert("L")).float()  # [1, H, W]
         return X, target
 
