@@ -18,15 +18,14 @@ config = {
     'max_idler': 100,
     'in_channels': 200,  # max_signal+max_idler
     'out_channels': 1,
-    'alpha': 1,
-    'beta': 1,
-    'gamme': 0, 
-    'delta': 0,
+    'loss_weight_ssim': 1,
+    'loss_weight_mse': 0.1,
+    'loss_weight_perceptual': 0.1, 
 }
 
 def loss_fn(output, target):
     # output, target: [B, 1, H, W]
-    return config['alpha'] * psnr(output, target) + config['beta'] * (1 - ssim(output, target)) + config['gamma'] * nn.MSELoss(output, target) + config['delta'] * perceptual_loss(output, target)    
+    return config['loss_weight_ssim'] * (1 - ssim(output, target)) + config['loss_weight_mse'] * nn.MSELoss()(output, target) + config['loss_weight_perceptual'] * perceptual_loss(output, target)    
 
 def train():
     train_dataset = GhostImagingDataset(
