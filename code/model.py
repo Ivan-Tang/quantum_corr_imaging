@@ -1,49 +1,49 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-class CompressiveImagingModel(nn.Module):
-    def __init__(self, input_dim=100, hidden_dim=256, n_heads=4, n_layers=2, output_size=512*384):
+class UNetBlock(nn.Module):
+    def __init__(self, in_ch, out_ch):
         super().__init__()
-        
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=input_dim,
-            nhead=n_heads,
-            dim_feedforward=hidden_dim,
-            batch_first=True
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_ch, out_ch, 3, padding=1),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_ch, out_ch, 3, padding=1),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True)
         )
-        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=n_layers)
+    def forward(self, x):
+        return self.conv(x)
 
-        self.attn_pool = nn.Sequential(
-            nn.Linear(input_dim, 1),  
-            nn.Softmax(dim=1)
-        )
-
-        # 卷积解码器：先升维成特征图，再用转置卷积还原空间结构
-        self.fc = nn.Linear(input_dim, 128 * 16 * 12)  # 128通道，16x12特征图
-        self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),  # 32x24
-            nn.ReLU(),
-            nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1),   # 64x48
-            nn.ReLU(),
-            nn.ConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1),   # 128x96
-            nn.ReLU(),
-            nn.ConvTranspose2d(16, 8, kernel_size=4, stride=2, padding=1),    # 256x192
-            nn.ReLU(),
-            nn.ConvTranspose2d(8, 1, kernel_size=4, stride=2, padding=1),     # 512x384
-            nn.Sigmoid()
-        )
-
-    def forward(self, x, mask=None):
-        if mask is not None:
-            x = x * mask.unsqueeze(-1) 
-
-        encoded = self.encoder(x)
-
-        attn_weights = self.attn_pool(encoded)
-        pooled = torch.sum(attn_weights * encoded, dim=1)  # [B, input_dim]
-
-        feat = self.fc(pooled)  # [B, 128*16*12]
-        feat = feat.view(-1, 128, 16, 12)  # [B, 128, 16, 12]
-        out = self.decoder(feat)  # [B, 1, 512, 384]
+class UNet(nn.Module):
+    def __init__(self, in_channels=200, out_channels=1):
+        super().__init__()
+        self.enc1 = UNetBlock(in_channels, 64)
+        self.enc2 = UNetBlock(64, 128)
+        self.enc3 = UNetBlock(128, 256)
+        self.enc4 = UNetBlock(256, 512)
+        self.pool = nn.MaxPool2d(2)
+        self.up3 = nn.ConvTranspose2d(512, 256, 2, stride=2)
+        self.dec3 = UNetBlock(512, 256)
+        self.up2 = nn.ConvTranspose2d(256, 128, 2, stride=2)
+        self.dec2 = UNetBlock(256, 128)
+        self.up1 = nn.ConvTranspose2d(128, 64, 2, stride=2)
+        self.dec1 = UNetBlock(128, 64)
+        self.final = nn.Conv2d(64, out_channels, 1)
+    def forward(self, x):
+        e1 = self.enc1(x)
+        e2 = self.enc2(self.pool(e1))
+        e3 = self.enc3(self.pool(e2))
+        e4 = self.enc4(self.pool(e3))
+        d3 = self.up3(e4)
+        d3 = torch.cat([d3, e3], dim=1)
+        d3 = self.dec3(d3)
+        d2 = self.up2(d3)
+        d2 = torch.cat([d2, e2], dim=1)
+        d2 = self.dec2(d2)
+        d1 = self.up1(d2)
+        d1 = torch.cat([d1, e1], dim=1)
+        d1 = self.dec1(d1)
+        out = self.final(d1)
+        out = torch.sigmoid(out)
         return out
