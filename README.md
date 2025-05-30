@@ -1,54 +1,47 @@
-# Quantum Correlation Imaging (量子关联成像) 项目说明
+# Quantum Correlation Imaging (量子关联成像) 项目
 
-本项目实现了基于量子关联成像的图像重建流程，包含数据准备、模型训练、预测与结果可视化等完整流程。适用于压缩感知、量子成像等相关研究与实验。
+本项目实现了基于深度学习的量子关联成像重建方法，支持多帧信号（signal）和闲光子（idler）图像堆叠输入，采用 UNet 网络结构进行高质量图像重建。
 
 ## 目录结构
+
 ```
 quantumn-corr-imaging/
-├── code/                # 主要代码目录
-│   ├── train.py         # 训练主程序
-│   ├── metric.py        # 测试与结果保存脚本
-│   ├── model.py         # 模型结构定义
-│   ├── dataset.py       # 数据集加载与处理
-│   ├── peek.py          # 可视化/调试工具
-│   └── __pycache__/     # Python缓存
-├── data/                # 数据目录
-│   ├── train/           # 训练集（每个物体一个子文件夹，含 signal、idler、target.JPG）
-│   ├── test/            # 测试集（结构同上）
-│   └── sample_data/     # 示例数据
-├── checkpoints/         # 训练模型权重
-│   └── best_model.pth   # 最优模型
-├── results/             # 预测结果图片
-│   ├── pred_*.png       # 预测重建图像
-│   └── target_*.png     # 对应真实target
-├── losses.png           # 训练损失曲线
-├── README.md            # 项目说明
+├── code/
+│   ├── dataset.py         # 数据集加载与预处理
+│   ├── model.py           # UNet模型定义
+│   ├── train.py           # 训练主程序
+│   ├── metric.py          # 推理与结果保存
+│   └── utils.py           # 工具函数
+├── data/
+│   ├── train/             # 训练集
+│   ├── val/               # 验证集
+│   └── test/              # 测试集
+├── checkpoints/           # 训练中保存的模型权重
+├── results/               # 推理结果图片
+├── losses.png             # 训练损失曲线
+└── README.md              # 项目说明
 ```
+
+## 数据格式
+- 每个样本为一个文件夹，包含：
+  - `signal/`：多张信号光子图片
+  - `idler/`：多张闲光子图片
+  - `target.JPG`：目标重建图像
 
 ## 快速开始
 
 ### 1. 安装依赖
-建议使用 Python 3.8+，安装 PyTorch、torchvision、numpy、matplotlib 等依赖。
-
 ```bash
-pip install torch torchvision numpy matplotlib
+pip install torch torchvision torchmetrics matplotlib
 ```
 
-### 2. 数据准备
-- 将训练/测试数据按如下结构放置：
-  - `data/train/物体编号/signal/`、`idler/`、`target.JPG`
-  - `data/test/物体编号/signal/`、`idler/`、`target.JPG`
-
-### 3. 训练模型
-
+### 2. 训练模型
 ```bash
 python code/train.py
 ```
-- 训练完成后，最优模型保存在 `checkpoints/best_model.pth`。
-- 损失曲线保存在 `losses.png`。
+- 训练完成后，最优模型保存在 `checkpoints/best_model.pth`
 
-### 4. 测试与预测
-
+### 3. 推理与结果保存
 ```bash
 python code/metric.py
 ```
@@ -58,7 +51,7 @@ python code/metric.py
 ## 主要文件说明
 - `code/train.py`：训练主程序，支持超参数集中管理。
 - `code/metric.py`：批量预测与结果保存脚本。
-- `code/model.py`：Transformer+MLP结构的成像重建模型。
+- `code/model.py`：UNet模型定义。
 - `code/dataset.py`：自定义数据集，支持物体级/采样mask等灵活配置。
 - `code/peek.py`：可选的可视化/调试工具。
 
@@ -86,4 +79,4 @@ python code/metric.py
 3. Windows更新可能占用摄像机。关闭Windows更新。
 
 ---
-如有问题欢迎联系或提交 issue。
+如有问题欢迎联系作者。
