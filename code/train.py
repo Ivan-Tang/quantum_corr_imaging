@@ -5,6 +5,7 @@ from model import UNet
 import torch.nn as nn
 from torchmetrics.functional import structural_similarity_index_measure as ssim
 from torchmetrics.functional import peak_signal_noise_ratio as psnr
+from utils import perceptual_loss
 
 config = {
     'root_dir': 'data/train',
@@ -16,12 +17,16 @@ config = {
     'max_signal': 100,
     'max_idler': 100,
     'in_channels': 200,  # max_signal+max_idler
-    'out_channels': 1
+    'out_channels': 1,
+    'alpha': 1,
+    'beta': 1,
+    'gamme': 0, 
+    'delta': 0,
 }
 
 def loss_fn(output, target):
     # output, target: [B, 1, H, W]
-    return 1 - ssim(output, target)
+    return config['alpha'] * psnr(output, target) + config['beta'] * (1 - ssim(output, target)) + config['gamma'] * nn.MSELoss(output, target) + config['delta'] * perceptual_loss(output, target)    
 
 def train():
     train_dataset = GhostImagingDataset(
