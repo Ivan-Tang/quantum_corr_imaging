@@ -5,38 +5,12 @@ from model import UNet
 import torch.nn as nn
 from torchmetrics.functional import structural_similarity_index_measure as ssim
 from torchmetrics.functional import peak_signal_noise_ratio as psnr
-<<<<<<< HEAD
-
-
-
-=======
->>>>>>> 852e5ba (为GhostImagingDataset类添加stack_num参数，更新数据处理逻辑以支持图像叠加；在train.py中更新数据集初始化，添加损失函数计算；在metric.py中添加空行以提高可读性；创建utils.py文件。)
 
 config = {
     'root_dir': 'data/train',
     'img_size': (512, 384),
     'epochs': 50,
     'learning_rate': 1e-3,
-<<<<<<< HEAD
-    'keep_ratio': 0.2,
-    'stack_num': 5,
-    'batch_size': 1,
-    'loss_weight_psnr': 1,
-    'loss_weight_ssim': 1
-}
-
-def loss_fn(output, target):
-    B = output.shape[0]
-    H, W = config['img_size']
-    output = output.view(B, 1, H, W)
-    loss = config['loss_weight_ssim'] * (1 - ssim(output, target)) + config['loss_weight_psnr'] * psnr(output, target)
-    return loss
-
-def train():
-    # 加载训练集和验证集
-    train_dataset = GhostImagingDataset(config['root_dir'], config['img_size'], keep_ratio=config['keep_ratio'], split='train', stack_num=config['stack_num'])
-    val_dataset = GhostImagingDataset(config['root_dir'], config['img_size'], keep_ratio=config['keep_ratio'], split='val', stack_num=config['stack_num'])
-=======
     'stack_num': 5,
     'batch_size': 1,
     'max_signal': 100,
@@ -48,7 +22,6 @@ def train():
 def loss_fn(output, target):
     # output, target: [B, 1, H, W]
     return 1 - ssim(output, target)
->>>>>>> 852e5ba (为GhostImagingDataset类添加stack_num参数，更新数据处理逻辑以支持图像叠加；在train.py中更新数据集初始化，添加损失函数计算；在metric.py中添加空行以提高可读性；创建utils.py文件。)
 
 def train():
     train_dataset = GhostImagingDataset(
@@ -103,17 +76,9 @@ def train():
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
-<<<<<<< HEAD
-            for X, mask, target in val_loader:
-                X, mask, target = X.to(device), mask.to(device), target.to(device)
-
-                output = model(X, mask)
-
-=======
             for X, target in val_loader:
                 X, target = X.to(device), target.to(device)
                 output = model(X)
->>>>>>> 852e5ba (为GhostImagingDataset类添加stack_num参数，更新数据处理逻辑以支持图像叠加；在train.py中更新数据集初始化，添加损失函数计算；在metric.py中添加空行以提高可读性；创建utils.py文件。)
                 loss = loss_fn(output, target)
                 val_loss += loss.item()
         val_loss /= len(val_loader)

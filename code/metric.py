@@ -8,11 +8,7 @@ from torchvision.utils import save_image
 
 
 
-<<<<<<< HEAD
-def predict_and_save(test_root_dir, img_size, model_path, save_dir):
-=======
 def predict_and_save(test_root_dir, img_size, model_path, save_dir, max_signal=100, max_idler=100):
->>>>>>> 852e5ba (为GhostImagingDataset类添加stack_num参数，更新数据处理逻辑以支持图像叠加；在train.py中更新数据集初始化，添加损失函数计算；在metric.py中添加空行以提高可读性；创建utils.py文件。)
     os.makedirs(save_dir, exist_ok=True)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     dataset = GhostImagingDataset(test_root_dir, img_size, split='all', max_signal=max_signal, max_idler=max_idler)
