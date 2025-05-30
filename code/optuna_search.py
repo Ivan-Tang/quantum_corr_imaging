@@ -1,0 +1,34 @@
+import optuna 
+import torch
+from train import train, config
+import copy
+
+def objective(trial):
+    #采样参数
+    trial_config = copy.deepcopy(config)
+    trial_config = copy.deepcopy(config)
+    trial_config['stack_num'] = trial.suggest_categorical('stack_num', [2, 5, 10, 20])
+    trial_config['learning_rate'] = trial.suggest_float('learning_rate', 1e-4, 1e-2)
+    trial_config['max_signal'] = trial.suggest_categorical('max_signal', [50, 100, 200])
+    trial_config['max_idler'] = trial.suggest_categorical('max_idler', [50, 100, 200])
+    trial_config['loss_weight_ssim'] = trial.suggest_float('loss_weight_ssim', 0.5, 2.0)
+    trial_config['loss_weight_mse'] = trial.suggest_float('loss_weight_mse', 0.01, 0.5)
+    trial_config['loss_weight_perceptual'] = trial.suggest_float('loss_weight_perceptual', 0.01, 0.5)
+    #重新计算 in_channels
+    trial_config['in_channels'] = (trial_config['max_signal'] // trial_config['stack_num']) + (trial_config['max_idler'] // trial_config['stack_num'])
+
+    #训练模型
+    val_loss = train(trial_config, return_best_val_loss=True)
+
+    return val_loss
+
+if __name__ == '__main__':
+    study = optuna.create_study(direction='minimize')
+    study.optimize(objective, n_trials=20)
+    print('Best trial:')
+    trial = study.best_trial
+    print(' Loss: {trail.value}')
+    print(' Params:')
+    for key, value in trial.params.items():
+        print(f' {key}: {value}')
+

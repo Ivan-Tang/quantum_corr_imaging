@@ -26,17 +26,12 @@ config = {
 }
 
 
-
 #根据max_signal, max_idler, stack_num计算输入通道数
 config['in_channels'] = (config['max_signal'] // config['stack_num']) + (config['max_idler'] // config['stack_num'])
 
-def loss_fn(output, target):
-    # output, target: [B, 1, H, W]
-    return config['loss_weight_ssim'] * (1 - ssim(output, target)) + config['loss_weight_mse'] * nn.MSELoss()(output, target) + config['loss_weight_perceptual'] * perceptual_loss(output, target)    
-
-def train():
+def train(config, return_best_val_loss=False):
     # 自动生成实验名，包含主要参数
-    exp_name = f"exp_{time.strftime('%Y%m%d_%H%M%S')}_stack{config['stack_num']}_lr{config['learning_rate']}_sig{config['max_signal']}"
+    exp_name = f"exp_{time.strftime('%Y%m%d_%H%M%S')}_epochs{config['epochs']}_stack{config['stack_num']}_lr{config['learning_rate']}_sig{config['max_signal']}"
     exp_dir = os.path.join('results', exp_name)
     os.makedirs(exp_dir, exist_ok=True)
     # 保存config参数
@@ -79,13 +74,17 @@ def train():
     losses = []
     psnrs = []
 
+    def loss_fn(output, target):
+        return config['loss_weight_ssim'] * (1 - ssim(output, target)) + \
+               config['loss_weight_mse'] * nn.MSELoss()(output, target) + \
+               config['loss_weight_perceptual'] * perceptual_loss(output, target)
+
     for epoch in range(config['epochs']):
         model.train()
         train_loss = 0.0
         train_psnr = 0.0
         for X, target in train_loader:
             X, target = X.to(device), target.to(device)
-            # X: [B, C, H, W], target: [B, 1, H, W]
             optimizer.zero_grad()
             output = model(X)
             loss = loss_fn(output, target)
@@ -131,6 +130,9 @@ def train():
     plt.legend()
     plt.savefig(os.path.join(exp_dir, 'psnrs.png'))
 
+    if return_best_val_loss:
+        return best_val_loss
+
 if __name__ == "__main__":
-    train()
+    train(config)
 

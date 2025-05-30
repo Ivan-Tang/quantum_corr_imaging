@@ -7,8 +7,6 @@ import matplotlib.pyplot as plt
 from torchvision.utils import save_image
 from torchmetrics.functional import peak_signal_noise_ratio as psnr
 
-
-
 def predict_and_save(test_root_dir, img_size, model_path, save_dir, max_signal=100, max_idler=100):
     os.makedirs(save_dir, exist_ok=True)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
