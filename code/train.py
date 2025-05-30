@@ -9,6 +9,7 @@ from utils import perceptual_loss
 import json
 import os
 import time
+import optuna
 
 config = {
     'root_dir': 'data/train',
@@ -29,7 +30,7 @@ config = {
 #根据max_signal, max_idler, stack_num计算输入通道数
 config['in_channels'] = (config['max_signal'] // config['stack_num']) + (config['max_idler'] // config['stack_num'])
 
-def train(config, return_best_val_loss=False):
+def train(config, return_best_val_loss=False, trial=None):
     # 自动生成实验名，包含主要参数
     exp_name = f"exp_{time.strftime('%Y%m%d_%H%M%S')}_epochs{config['epochs']}_stack{config['stack_num']}_lr{config['learning_rate']}_sig{config['max_signal']}"
     exp_dir = os.path.join('results', exp_name)
@@ -91,7 +92,7 @@ def train(config, return_best_val_loss=False):
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
-            train_psnr += psnr(output, target)
+            train_psnr += psnr(output, target).cpu().item()
         train_loss /= len(train_loader)
         train_psnr /= len(train_loader)
 
@@ -104,10 +105,17 @@ def train(config, return_best_val_loss=False):
                 output = model(X)
                 loss = loss_fn(output, target)
                 val_loss += loss.item()
-                val_psnr += psnr(output, target)
+                val_psnr += psnr(output, target).cpu().item()
         val_loss /= len(val_loader)
         val_psnr /= len(val_loader)
 
+        #optuna pruner
+        if trial is not None:
+            trial.report(val_loss, epoch)
+            if trial.should_prune():
+                print(f"Trial pruned at epoch {epoch+1}")
+                raise optuna.TrialPruned()
+            
         print(f"Epoch [{epoch + 1}/{config['epochs']}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
         losses.append((train_loss, val_loss))
         psnrs.append((train_psnr, val_psnr))

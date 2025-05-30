@@ -20,8 +20,10 @@ def objective(trial):
     trial_config['in_channels'] = (trial_config['max_signal'] // trial_config['stack_num']) + (trial_config['max_idler'] // trial_config['stack_num'])
 
     #训练模型
-    val_loss = train(trial_config, return_best_val_loss=True)
-
+    try:
+        val_loss = train(trial_config, return_best_val_loss=True)
+    except optuna.TrialPruned:
+        raise
     return val_loss
 
 if __name__ == '__main__':
