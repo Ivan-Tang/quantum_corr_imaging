@@ -2,6 +2,8 @@ import optuna
 import torch
 from train import train, config
 import copy
+import os
+import time
 
 def objective(trial):
     #采样参数
@@ -31,4 +33,19 @@ if __name__ == '__main__':
     print(' Params:')
     for key, value in trial.params.items():
         print(f' {key}: {value}')
+
+    # save trials to csv
+    df = study.trials_dataframe()
+    os.mkdirs('results/optuna', exist_ok=True)
+    df.to_csv(f'results/optuna/trials{time.strftime("%Y%m%d_%H%M%S")}.csv')
+
+    # save best params
+    import json
+    with open(f'results/optuna/best_params{time.strftime("%Y%m%d_%H%M%S")}.json', 'w') as f:
+        json.dump(trial.params, f)
+    with open(f'results/optuna/best_value{time.strftime("%Y%m%d_%H%M%S")}.txt', 'w') as f:
+        f.write(f'Best loss: {trial.value}\\n')
+        f.write(json.dumps(trial.params, indent=2))
+
+
 
