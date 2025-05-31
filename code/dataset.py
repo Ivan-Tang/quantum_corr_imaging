@@ -5,12 +5,25 @@ from torchvision import transforms
 from PIL import Image
 
 class GhostImagingDataset(Dataset):
-    def __init__(self, root_dir, img_size=(512, 384), stack_num=5, split='train', split_ratio=0.8, max_signal=100, max_idler=100):
+    def __init__(self, root_dir, img_size=None, stack_num=5, split='train', split_ratio=0.8, max_signal=100, max_idler=100):
         self.object_dirs = []
         for name in sorted(os.listdir(root_dir)):
             obj_path = os.path.join(root_dir, name)
             if os.path.isdir(obj_path):
                 self.object_dirs.append(obj_path)
+        # 自动推断图片尺寸
+        if img_size is None:
+            # 找到第一个signal图片
+            for obj_dir in self.object_dirs:
+                signal_dir = os.path.join(obj_dir, 'signal')
+                for f in os.listdir(signal_dir):
+                    if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp')):
+                        img = Image.open(os.path.join(signal_dir, f))
+                        w, h = img.size
+                        img_size = (h, w)
+                        break
+                if img_size is not None:
+                    break
         self.img_size = img_size
         self.split = split
         self.split_ratio = split_ratio
