@@ -4,10 +4,10 @@ from train import train, config
 import copy
 import os
 import time
+from metric import run_metric
 
 def objective(trial):
     #采样参数
-    trial_config = copy.deepcopy(config)
     trial_config = copy.deepcopy(config)
     trial_config['stack_num'] = trial.suggest_categorical('stack_num', [2, 5, 10, 20])
     trial_config['learning_rate'] = trial.suggest_float('learning_rate', 1e-4, 1e-2)
@@ -21,7 +21,9 @@ def objective(trial):
 
     #训练模型
     try:
-        val_loss = train(trial_config, return_best_val_loss=True)
+        val_loss, exp_dir = train(trial_config, return_best_val_loss=True, return_exp_dir=True)
+        # 训练后自动推理，生成预测图片
+        run_metric(exp_dir=exp_dir)
     except optuna.TrialPruned:
         raise
     return val_loss
@@ -46,7 +48,7 @@ if __name__ == '__main__':
     with open(f'results/optuna/best_params{time.strftime("%Y%m%d_%H%M%S")}.json', 'w') as f:
         json.dump(trial.params, f)
     with open(f'results/optuna/best_value{time.strftime("%Y%m%d_%H%M%S")}.txt', 'w') as f:
-        f.write(f'Best loss: {trial.value}\\n')
+        f.write(f'Best loss: {trial.value}\n')
         f.write(json.dumps(trial.params, indent=2))
 
 

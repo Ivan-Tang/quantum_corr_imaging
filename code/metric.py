@@ -66,12 +66,22 @@ def predict_and_save_with_config(test_root_dir, img_size, model_path, save_dir, 
     print(f'Total inference time {total_time:.3f}, avg time per image {avg_time:.3f}')
     return list(metrics)
 
-def run_metric():
+def run_metric(exp_dir=None):
     test_root_dir = 'data/test'
-    img_size = (512, 384)
-    model_path = 'checkpoints/best_model.pth'
-    config, latest_exp = get_latest_config('results')
-    save_dir = os.path.join('results/', latest_exp)
+    img_size = (384, 512)
+    results_dir = 'results'
+    if exp_dir is not None:
+        # 指定实验目录
+        config_path = os.path.join(results_dir, exp_dir, 'config.json')
+        model_path = os.path.join(results_dir, exp_dir, 'best_model.pth')
+        save_dir = os.path.join(results_dir, exp_dir)
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+        print(f"Loaded config from {config_path}")
+    else:
+        config, exp_dir = get_latest_config(results_dir)
+        model_path = 'checkpoints/best_model.pth'
+        save_dir = os.path.join(results_dir, exp_dir)
     psnrs = predict_and_save_with_config(test_root_dir, img_size, model_path, save_dir, config)
     print(f'PSNRs: {psnrs}')
     with open(os.path.join(save_dir, 'psnrs.txt'), 'w') as f:

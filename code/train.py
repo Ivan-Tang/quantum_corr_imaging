@@ -31,7 +31,7 @@ config = {
 #根据max_signal, max_idler, stack_num计算输入通道数
 config['in_channels'] = (config['max_signal'] // config['stack_num']) + (config['max_idler'] // config['stack_num'])
 
-def train(config, return_best_val_loss=False, trial=None):
+def train(config, return_best_val_loss=False, trial=None, return_exp_dir=False):
     exp_name = f"exp_{time.strftime('%Y%m%d_%H%M%S')}_epochs{config['epochs']}_stack{config['stack_num']}_lr{config['learning_rate']:.3g}_sig{config['max_signal']}"
     exp_dir = os.path.join('results', exp_name)
     os.makedirs(exp_dir, exist_ok=True)
@@ -142,8 +142,12 @@ def train(config, return_best_val_loss=False, trial=None):
     plt.savefig(os.path.join(exp_dir, 'psnrs.png'))
     plt.close()
 
-    if return_best_val_loss:
+    if return_best_val_loss and return_exp_dir:
+        return best_val_loss, exp_dir
+    elif return_best_val_loss:
         return best_val_loss
+    elif return_exp_dir:
+        return exp_dir
 
 if __name__ == "__main__":
     train(config)
