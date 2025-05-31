@@ -10,6 +10,7 @@ import json
 import os
 import time
 import optuna
+from metric import run_metric
 
 config = {
     'root_dir': 'data/train',
@@ -31,7 +32,7 @@ config = {
 config['in_channels'] = (config['max_signal'] // config['stack_num']) + (config['max_idler'] // config['stack_num'])
 
 def train(config, return_best_val_loss=False, trial=None):
-    exp_name = f"exp_{time.strftime('%Y%m%d_%H%M%S')}_epochs{config['epochs']}_stack{config['stack_num']}_lr{config['learning_rate']}_sig{config['max_signal']}"
+    exp_name = f"exp_{time.strftime('%Y%m%d_%H%M%S')}_epochs{config['epochs']}_stack{config['stack_num']}_lr{config['learning_rate']:.3g}_sig{config['max_signal']}"
     exp_dir = os.path.join('results', exp_name)
     os.makedirs(exp_dir, exist_ok=True)
 
@@ -122,24 +123,29 @@ def train(config, return_best_val_loss=False, trial=None):
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             torch.save(model.state_dict(), 'checkpoints/best_model.pth')
+            torch.save(model.state_dict(), os.path.join(exp_dir, 'best_model.pth'))
             print("Saved Best Model")
 
     #plot
     import matplotlib.pyplot as plt
+    plt.figure()
     plt.plot([x[0] for x in losses], label='train_loss')
     plt.plot([x[1] for x in losses], label='val_loss')
     plt.legend()
     plt.savefig(os.path.join(exp_dir, 'losses.png'))
+    plt.close()
 
     plt.figure()
     plt.plot([x[0] for x in psnrs], label = 'train_psnr')
     plt.plot([x[1] for x in psnrs], label = 'val_psnr')
     plt.legend()
     plt.savefig(os.path.join(exp_dir, 'psnrs.png'))
+    plt.close()
 
     if return_best_val_loss:
         return best_val_loss
 
 if __name__ == "__main__":
     train(config)
+    run_metric()
 

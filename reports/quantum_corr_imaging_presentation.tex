@@ -129,6 +129,26 @@ study.optimize(objective, n_trials=20)
 \end{itemize}
 \end{frame}
 
+% PSNR 指标说明
+\begin{frame}{PSNR 指标说明}
+    \textbf{PSNR（峰值信噪比, Peak Signal-to-Noise Ratio）} 是衡量图像重建质量的常用指标，单位为 dB（分贝）。
+    \begin{itemize}
+        \item \textbf{定义：} $\mathrm{PSNR} = 10 \log_{10}(\mathrm{MAX}^2 / \mathrm{MSE})$
+        \item \textbf{MAX} 为像素最大值（如1.0或255），MSE为均方误差
+        \item \textbf{范围：} 理论上 $[0, +\infty)$，实际常见 $10\sim40$ dB
+        \item \textbf{常见区间：}
+        \begin{itemize}
+            \item $<20$ dB：肉眼可见明显失真
+            \item $20\sim30$ dB：有失真但可接受
+            \item $30\sim40$ dB：高质量重建
+            \item $>40$ dB：几乎无失真
+        \end{itemize}
+        \item \textbf{PSNR 越高，重建效果越好}
+        \item 本项目所有PSNR均基于归一化到$[0,1]$的灰度图像
+    \end{itemize}
+\end{frame}
+% --- END ---
+
 % 结语
 \begin{frame}{结语}
 \begin{itemize}

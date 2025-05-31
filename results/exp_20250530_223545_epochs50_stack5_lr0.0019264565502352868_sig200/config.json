@@ -1,0 +1,18 @@
+{
+  "root_dir": "data/train",
+  "img_size": [
+    512,
+    384
+  ],
+  "epochs": 50,
+  "learning_rate": 0.0019264565502352868,
+  "stack_num": 5,
+  "batch_size": 1,
+  "max_signal": 200,
+  "max_idler": 50,
+  "out_channels": 1,
+  "loss_weight_ssim": 1.873411522024485,
+  "loss_weight_mse": 0.372527563347353,
+  "loss_weight_perceptual": 0.34606894382987713,
+  "in_channels": 50
+}

@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     # save trials to csv
     df = study.trials_dataframe()
-    os.mkdirs('results/optuna', exist_ok=True)
+    os.makedirs('results/optuna', exist_ok=True)
     df.to_csv(f'results/optuna/trials{time.strftime("%Y%m%d_%H%M%S")}.csv')
 
     # save best params
