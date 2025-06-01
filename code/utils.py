@@ -39,6 +39,36 @@ def random_mask(img, mask_ratio=0.1, block_ratio=0.1):
 
     return img
 
+class RandomNoiseTransform:
+    def __init__(self, mask_ratio=0.1, block_ratio=0.1):
+        self.mask_ratio = mask_ratio
+        self.block_ratio = block_ratio
+
+    def __call__(self, img_tensor):
+        _, H, W = img_tensor.shape
+        
+        # Apply random pixel noise
+        num_pixels_to_mask = int(H * W * self.mask_ratio)
+        if num_pixels_to_mask > 0:
+            mask_indices = torch.randperm(H * W, device=img_tensor.device)[:num_pixels_to_mask]
+            mask_y = mask_indices // W
+            mask_x = mask_indices % W
+            noise_values = torch.rand(num_pixels_to_mask, device=img_tensor.device)
+            img_tensor[..., mask_y, mask_x] = noise_values
+
+        # Apply blocking noise (setting pixels to 0)
+        num_pixels_to_block = int(H * W * self.block_ratio)
+        if num_pixels_to_block > 0:
+            # Ensure block indices are different from noise indices if needed,
+            # but for simplicity here, we draw fresh random indices.
+            # If overlap is a concern, a more complex sampling without replacement would be needed.
+            block_indices = torch.randperm(H * W, device=img_tensor.device)[:num_pixels_to_block]
+            block_y = block_indices // W
+            block_x = block_indices % W
+            img_tensor[..., block_y, block_x] = 0
+            
+        return img_tensor
+
 
 
 if __name__ == '__main__':

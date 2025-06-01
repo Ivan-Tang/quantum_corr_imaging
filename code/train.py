@@ -44,7 +44,8 @@ def train(config, trial=None):
         stack_num=config['stack_num'],
         split='train',
         max_signal=config['max_signal'],
-        max_idler=config['max_idler']
+        max_idler=config['max_idler'],
+        add_noise=True
     )
     val_dataset = GhostImagingDataset(
         config['root_dir'],
