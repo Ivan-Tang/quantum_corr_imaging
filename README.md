@@ -89,6 +89,36 @@ python code/optuna_search.py
 
 ---
 
+## 自动化测试与CI
+
+本项目已集成自动化smoke测试脚本 `code/test_pipeline.py`，可一键验证主流程（训练、推理、超参数搜索）是否正常运行，并自动清理测试产物。
+
+- **本地测试**：
+  ```bash
+  python code/test_pipeline.py
+  ```
+  运行后会依次测试训练、推理、optuna调参主流程，所有测试产物自动删除。
+
+- **CI集成**：
+  推荐将 `test_pipeline.py` 集成到GitHub Actions等CI工具，保障每次提交主流程可用。
+  可参考如下workflow配置：
+  ```yaml
+  name: Python CI
+  on: [push, pull_request]
+  jobs:
+    test:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
+        - uses: actions/setup-python@v4
+          with:
+            python-version: '3.9'
+        - run: pip install torch torchvision torchmetrics matplotlib optuna pillow
+        - run: python code/test_pipeline.py
+  ```
+
+---
+
 ## 主要参数说明
 - `stack_num`：每stack_num张signal/idler图片预叠加为1通道。
 - `max_signal`/`max_idler`：每个样本最多取多少帧signal/idler。
