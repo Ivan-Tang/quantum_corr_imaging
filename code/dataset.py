@@ -86,8 +86,8 @@ class GhostImagingDataset(Dataset):
             idler_imgs.append(img)
 
         # 预处理：随机噪声
-        for img in signal_imgs + idler_imgs:
-            img = random_mask(img, 0.1, 0.1)
+        #for img in signal_imgs + idler_imgs:
+            #img = random_mask(img, 0.1, 0.1)
 
         # 预叠加：每stack_num张合成一张（均值）
         def stack_and_merge(imgs, stack_num):
