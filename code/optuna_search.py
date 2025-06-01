@@ -21,7 +21,9 @@ def objective(trial):
 
     #训练模型
     try:
-        val_loss, exp_dir = train(trial_config, return_best_val_loss=True, return_exp_dir=True)
+        result = train(trial_config)
+        val_loss = result['val_loss']
+        exp_dir = result['exp_dir']
         # 训练后自动推理，生成预测图片
         run_metric(exp_dir=exp_dir)
     except optuna.TrialPruned:

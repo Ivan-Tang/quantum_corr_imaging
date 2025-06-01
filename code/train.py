@@ -10,7 +10,6 @@ import json
 import os
 import time
 import optuna
-from metric import run_metric
 
 config = {
     'root_dir': 'data/train',
@@ -31,7 +30,7 @@ config = {
 #根据max_signal, max_idler, stack_num计算输入通道数
 config['in_channels'] = (config['max_signal'] // config['stack_num']) + (config['max_idler'] // config['stack_num'])
 
-def train(config, return_best_val_loss=False, trial=None, return_exp_dir=False):
+def train(config, trial=None):
     exp_name = f"exp_{time.strftime('%Y%m%d_%H%M%S')}_epochs{config['epochs']}_stack{config['stack_num']}_lr{config['learning_rate']:.3g}_sig{config['max_signal']}"
     exp_dir = os.path.join('results', exp_name)
     os.makedirs(exp_dir, exist_ok=True)
@@ -109,7 +108,7 @@ def train(config, return_best_val_loss=False, trial=None, return_exp_dir=False):
         val_loss /= len(val_loader)
         val_psnr /= len(val_loader)
 
-        # optuna pruner
+        # if trial, use optuna pruner
         if trial is not None:
             trial.report(val_loss, epoch)
             if trial.should_prune():
@@ -142,14 +141,13 @@ def train(config, return_best_val_loss=False, trial=None, return_exp_dir=False):
     plt.savefig(os.path.join(exp_dir, 'psnrs.png'))
     plt.close()
 
-    if return_best_val_loss and return_exp_dir:
-        return best_val_loss, exp_dir
-    elif return_best_val_loss:
-        return best_val_loss
-    elif return_exp_dir:
-        return exp_dir
+
+    result = {
+        'best_val_loss': best_val_loss,
+        'exp_dir': exp_dir
+    }
+    return result
 
 if __name__ == "__main__":
     train(config)
-    run_metric()
 
