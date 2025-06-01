@@ -1,0 +1,2 @@
+,number,value,datetime_start,datetime_complete,duration,params_learning_rate,params_loss_weight_mse,params_loss_weight_perceptual,params_loss_weight_ssim,params_max_idler,params_max_signal,params_stack_num,state
+0,0,0.4597708284854889,2025-06-01 10:37:19.522888,2025-06-01 10:38:31.342285,0 days 00:01:11.819397,0.001723571671541765,0.3961965265768856,0.048583139281005876,1.018914496388508,50,100,5,COMPLETE

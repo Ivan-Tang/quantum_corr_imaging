@@ -31,12 +31,13 @@ def get_latest_config(results_dir='results'):
     print(f"Loaded config from {config_path}")
     return config, latest_exp_dir
 
-def predict_and_save_with_config(test_root_dir, img_size, model_path, save_dir, config):
+def predict_and_save_with_config(test_root_dir, model_path, save_dir, config):
     os.makedirs(save_dir, exist_ok=True)
     device = get_device()
     max_signal = config['max_signal']
     max_idler = config['max_idler']
     stack_num = config.get('stack_num', 1)
+    img_size = config['img_size']
     in_channels = (max_signal // stack_num) + (max_idler // stack_num)
     dataset = GhostImagingDataset(test_root_dir, img_size, split='all', max_signal=max_signal, max_idler=max_idler, stack_num=stack_num)
     loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
@@ -69,7 +70,6 @@ def predict_and_save_with_config(test_root_dir, img_size, model_path, save_dir, 
 
 def run_metric(exp_dir=None):
     test_root_dir = 'data/test'
-    img_size = (384, 512)
     if exp_dir is not None:
         config_path = os.path.join(exp_dir, 'config.json')
         model_path = os.path.join(exp_dir, 'best_model.pth')
@@ -81,7 +81,7 @@ def run_metric(exp_dir=None):
         config, exp_dir = get_latest_config('result')
         model_path = 'checkpoints/best_model.pth'
         save_dir = os.path.join(exp_dir)
-    psnrs = predict_and_save_with_config(test_root_dir, img_size, model_path, save_dir, config)
+    psnrs = predict_and_save_with_config(test_root_dir, model_path, save_dir, config)
     print(f'PSNRs: {psnrs}')
     with open(os.path.join(save_dir, 'psnrs.txt'), 'w') as f:
         f.write(str(psnrs))
