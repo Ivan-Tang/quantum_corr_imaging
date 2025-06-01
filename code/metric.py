@@ -68,8 +68,7 @@ def predict_and_save_with_config(test_root_dir, model_path, save_dir, config):
     print(f'Total inference time {total_time:.3f}, avg time per image {avg_time:.3f}')
     return list(metrics)
 
-def run_metric(exp_dir=None):
-    test_root_dir = 'data/test'
+def run_metric(exp_dir=None, test_root_dir='data/test'):
     if exp_dir is not None:
         config_path = os.path.join(exp_dir, 'config.json')
         model_path = os.path.join(exp_dir, 'best_model.pth')

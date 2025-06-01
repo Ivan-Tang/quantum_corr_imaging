@@ -14,8 +14,10 @@ sys.path.insert(0, os.path.dirname(__file__))
 from train import train, config
 from metric import run_metric
 
+
 def test_train_smoke():
     test_config = config.copy()
+    test_config['root_dir'] = 'data/sample_data/train'  # 用sample_data做训练
     test_config['epochs'] = 1
     test_config['batch_size'] = 1
     test_config['max_signal'] = 10
@@ -30,8 +32,9 @@ def test_train_smoke():
 
 
 def test_metric_smoke(exp_dir):
-    # 用刚刚训练的exp_dir
-    run_metric(exp_dir=exp_dir)
+    # 用刚刚训练的exp_dir，推理时指定sample_data/test
+    from metric import run_metric
+    run_metric(exp_dir=exp_dir, test_root_dir='data/sample_data/test')
     print("metric流程smoke测试通过")
     # 删除exp_dir
     import shutil
@@ -41,6 +44,7 @@ def test_metric_smoke(exp_dir):
 def test_optuna_smoke():
     import train
     train.config['epochs'] = 1
+    train.config['root_dir'] = 'data/sample_data/train'  # optuna也用sample_data
     import optuna_search
     study = optuna_search.optuna.create_study(direction='minimize')
     study.optimize(optuna_search.objective, n_trials=1)
