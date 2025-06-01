@@ -3,6 +3,7 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 from PIL import Image
+from utils import random_mask
 
 class GhostImagingDataset(Dataset):
     def __init__(self, root_dir, img_size=None, stack_num=5, split='train', split_ratio=0.8, max_signal=100, max_idler=100):
@@ -68,12 +69,10 @@ class GhostImagingDataset(Dataset):
         assert len(signal_paths) == len(idler_paths), "Mismatch between signal and idler images"
         n = len(signal_paths)
         split_idx = int(n * self.split_ratio)
-        if self.split == 'train':
-            signal_paths = signal_paths[:split_idx]
-            idler_paths = idler_paths[:split_idx]
-        else:
-            signal_paths = signal_paths[split_idx:]
-            idler_paths = idler_paths[split_idx:]
+
+        signal_paths = signal_paths[split_idx:]
+        idler_paths = idler_paths[split_idx:]
+
         # 只取前max_signal和max_idler张
         signal_imgs = []
         for path in signal_paths[:self.max_signal]:
@@ -85,6 +84,11 @@ class GhostImagingDataset(Dataset):
             img = Image.open(path).convert('L')
             img = self.transform(img)
             idler_imgs.append(img)
+
+        # 预处理：随机噪声
+        for img in signal_imgs + idler_imgs:
+            img = random_mask(img, 0.1, 0.1)
+
         # 预叠加：每stack_num张合成一张（均值）
         def stack_and_merge(imgs, stack_num):
             merged = []

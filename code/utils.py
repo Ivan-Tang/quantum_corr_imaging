@@ -1,6 +1,8 @@
 import torchvision.models as models
 import torch.nn.functional as F
 import torch
+import random
+
 
 # 兼容新版torchvision的VGG16加载方式
 try:
@@ -21,4 +23,22 @@ def perceptual_loss(output, target):
     feat_tar = vgg(target)
     loss = F.mse_loss(feat_out, feat_tar)
     return loss
+
+#图片随机掩码
+def random_mask(img, mask_ratio=0.1, block_ratio=0.1):
+    # img: torch.Tensor, shape [1, H, W]
+    _, H, W = img.shape
+    mask_amount = int(H * W * mask_ratio)
+    block_amount = int(H * W * block_ratio)
+    for i in range(mask_amount+block_amount):
+        y = random.randint(0, H - 1)
+        x = random.randint(0, W - 1)
+        if i < mask_amount:
+            img[..., y, x] = random.uniform(0, 1)  # 随机像素值
+        else:
+            img[..., y, x] = 0  # 掩码像素值
+
+    return img
+
+
 
