@@ -1,7 +1,6 @@
 .DS_Store
 *.mat
 *.pth
-*.jpg
 __pycache__
 
 data/train/
