@@ -22,7 +22,7 @@ def objective(trial):
     #训练模型
     try:
         result = train(trial_config)
-        val_loss = result['val_loss']
+        val_loss = result['best_val_loss']
         exp_dir = result['exp_dir']
         # 训练后自动推理，生成预测图片
         run_metric(exp_dir=exp_dir)

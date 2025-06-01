@@ -78,7 +78,7 @@ def run_metric(exp_dir=None):
             config = json.load(f)
         print(f"Loaded config from {config_path}")
     else:
-        config, exp_dir = get_latest_config('result')
+        config, exp_dir = get_latest_config('results')  # 修正此处，原为'result'
         model_path = 'checkpoints/best_model.pth'
         save_dir = os.path.join(exp_dir)
     psnrs = predict_and_save_with_config(test_root_dir, model_path, save_dir, config)
