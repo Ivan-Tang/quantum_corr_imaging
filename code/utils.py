@@ -2,7 +2,7 @@ import torchvision.models as models
 import torch.nn.functional as F
 import torch
 import random
-
+from PIL import Image
 
 # 兼容新版torchvision的VGG16加载方式
 try:
@@ -26,7 +26,6 @@ def perceptual_loss(output, target):
 
 #图片随机掩码
 def random_mask(img, mask_ratio=0.1, block_ratio=0.1):
-    # img: torch.Tensor, shape [1, H, W]
     _, H, W = img.shape
     mask_amount = int(H * W * mask_ratio)
     block_amount = int(H * W * block_ratio)
@@ -39,6 +38,26 @@ def random_mask(img, mask_ratio=0.1, block_ratio=0.1):
             img[..., y, x] = 0  # 掩码像素值
 
     return img
+
+
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    import numpy as np
+    img_path = 'data/sample_data/train/1/target.jpg'
+    img = Image.open(img_path).convert('L')
+    img_tensor = torch.from_numpy(np.array(img, dtype=np.float32)).unsqueeze(0)  # 修正
+    plt.subplot(1, 2, 1)
+    plt.title('Original')
+    plt.imshow(img_tensor.squeeze().numpy(), cmap='gray')
+
+    masked = random_mask(img_tensor.clone(), mask_ratio=0.2, block_ratio=0.1)
+    plt.subplot(1, 2, 2)
+    plt.title('Masked')
+    plt.imshow(masked.squeeze().numpy(), cmap='gray')
+    plt.savefig('reports/masking_comparison.png')
+    plt.close()
+
 
 
 
