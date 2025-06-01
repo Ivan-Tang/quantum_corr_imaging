@@ -24,11 +24,12 @@ def get_latest_config(results_dir='results'):
         raise FileNotFoundError('No exp_xxx directory found in results/')
     exp_dirs.sort(key=lambda x: os.path.getmtime(os.path.join(results_dir, x)), reverse=True)
     latest_exp = exp_dirs[0]
+    latest_exp_dir = os.path.join(results_dir, latest_exp)
     config_path = os.path.join(results_dir, latest_exp, 'config.json')
     with open(config_path, 'r') as f:
         config = json.load(f)
     print(f"Loaded config from {config_path}")
-    return config, latest_exp
+    return config, latest_exp_dir
 
 def predict_and_save_with_config(test_root_dir, img_size, model_path, save_dir, config):
     os.makedirs(save_dir, exist_ok=True)
@@ -69,19 +70,17 @@ def predict_and_save_with_config(test_root_dir, img_size, model_path, save_dir, 
 def run_metric(exp_dir=None):
     test_root_dir = 'data/test'
     img_size = (384, 512)
-    results_dir = 'results'
     if exp_dir is not None:
-        # 指定实验目录
-        config_path = os.path.join(results_dir, exp_dir, 'config.json')
-        model_path = os.path.join(results_dir, exp_dir, 'best_model.pth')
-        save_dir = os.path.join(results_dir, exp_dir)
+        config_path = os.path.join(exp_dir, 'config.json')
+        model_path = os.path.join(exp_dir, 'best_model.pth')
+        save_dir = os.path.join(exp_dir)
         with open(config_path, 'r') as f:
             config = json.load(f)
         print(f"Loaded config from {config_path}")
     else:
-        config, exp_dir = get_latest_config(results_dir)
+        config, exp_dir = get_latest_config('result')
         model_path = 'checkpoints/best_model.pth'
-        save_dir = os.path.join(results_dir, exp_dir)
+        save_dir = os.path.join(exp_dir)
     psnrs = predict_and_save_with_config(test_root_dir, img_size, model_path, save_dir, config)
     print(f'PSNRs: {psnrs}')
     with open(os.path.join(save_dir, 'psnrs.txt'), 'w') as f:

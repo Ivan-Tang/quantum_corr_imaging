@@ -30,7 +30,7 @@ def objective(trial):
 
 if __name__ == '__main__':
     study = optuna.create_study(direction='minimize')
-    study.optimize(objective, n_trials=20)
+    study.optimize(objective, n_trials=1)
     print('Best trial:')
     trial = study.best_trial
     print(' Loss: {trail.value}')

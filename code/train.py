@@ -15,7 +15,7 @@ from metric import run_metric
 config = {
     'root_dir': 'data/train',
     'img_size': (384, 512),
-    'epochs': 50,
+    'epochs': 10,
     'learning_rate': 1e-3,
     'stack_num': 5,
     'batch_size': 1,
