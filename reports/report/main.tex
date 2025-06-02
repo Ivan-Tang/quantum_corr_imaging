@@ -1,11 +1,12 @@
 \documentclass{beamer}
+
 \usepackage{graphicx}
 \usepackage{listings}
 \usetheme{Madrid}
 
-\title{End-to-End Quantum Correlated Imaging Reconstruction with UNet}
+\title{End-to-End Correlated Imaging Reconstruction with UNet}
 \author{Yiwen Tang, Yufan Yao}
-\date{May 2025}
+\date{June 2025}
 
 \begin{document}
 
@@ -13,74 +14,164 @@
 \frame{\titlepage}
 
 % Project Introduction
+
 \begin{frame}{Project Introduction}
+\begin{block}{Research directions in correlated imaging:}
+\begin{itemize}
+    \begin{itemize}
+        \item \textcolor{blue}{Light source development} (X-ray, sunlight, \textcolor{red}{weak-light})
+        \item Dynamic scene reconstruction
+        \item \textcolor{blue}{Reconstruction algorithms} (compressed sensing, \textcolor{red}{machine learning})
+    \end{itemize}
+   
+\end{itemize}
+\end{block}
+\begin{block}{Our Contribution}
 \begin{itemize}
     \item This project implements an end-to-end quantum correlated imaging (Ghost Imaging) reconstruction system based on UNet.
     \item Supports multi-frame signal/idler image stacking as multi-channel input, adapted to UNet.
     \item Flexible loss function combination (SSIM, MSE, perceptual loss, etc.), supports weighted loss.
     \item Automated experiment logging and hyperparameter search for easy comparison and reproducibility.
 \end{itemize}
+\end{block}
+
+\end{frame}
+
+\begin{frame}{Dataset Construction}
+
+    \begin{itemize}
+            \item \textbf{MATLAB-based CCD Control:}
+            \begin{itemize}
+                \item Developed host computer software for fully automatic capture and save
+                \item Simultaneous capture from signal and idler cameras
+            \end{itemize}
+            
+
+            
+            \item \textbf{Challenging Imaging Conditions:}
+            \begin{itemize}
+                \item Minimal aperture, low laser power and low brightness(QCI setting:12,000,Our setting: 2,000-5,000).
+                \item Proves algorithm robustness in low-signal regimes
+            \end{itemize}
+     \end{itemize}
+
+        \centering
+     
+        \begin{tabular}{|l|c|c|c|}
+            \hline
+            Camera & Idler & QCI Signal & Unet Signal\\
+            \hline
+            Brightness & 12000 & 12000 & 2000-5000 \\
+            \hline
+            Contrast(\%) & 100 &100 & 100 \\
+            \hline
+            Gain（dB） & 10 & 10 & 10 \\
+            \hline
+            Time (3000frames) & & 3-4min & 60-80s &
+            \hline 
+        \end{tabular}
+
+        
+           \small{Camera Configuration}
+\end{frame}
+
+
+\begin{frame}{Dataset Construction}
+
+        \begin{itemize}
+                \item Laser-cut wood samples with diverse geometries, which ensures reconstruction fidelity
+                \item 50,000+ 512x384 Black-and-white images captured
+        \end{itemize}
+        \begin{columns}
+            \column{0.3\textwidth}
+            \includegraphics[width=0.95\linewidth]{samples.png}
+            \small{Samples}
+            \column{0.7\textwidth}
+            \includegraphics[width=0.95\linewidth]{image.png}
+            \small{Some of the images captured by Idler camera}
+        \end{columns}
 \end{frame}
 
 % Data Structure
 \begin{frame}{Data Structure and Preprocessing}
 \textbf{Each sample directory:}
 \begin{itemize}
-  \item \texttt{object\_dir/}
+  \item \texttt{object_dir/}
   \begin{itemize}
-    \item \texttt{signal/} \hspace{1em} \% multi-frame signal images
-    \item \texttt{idler/} \hspace{1em} \% multi-frame idler images
-    \item \texttt{target_0.png}
+    \item \texttt{signal/} \hspace{1em}  multi-frame signal images
+    \item \texttt{idler/} \hspace{1em}  multi-frame idler images
+    \item \texttt{target.JPG}
   \end{itemize}
 \end{itemize}
 \vspace{0.5em}
 \textbf{Multi-frame stacking and merging:}
 \begin{itemize}
-    \item Take the first max\_signal/max\_idler signal/idler images
-    \item Every stack\_num images are averaged to form one channel
-    \item Final input channels: $(\text{max\_signal}//\text{stack\_num}) + (\text{max\_idler}//\text{stack\_num})$
+    \item Take the first max_signal/max_idler signal/idler images
+    \item Every stack_num images are averaged to form one channel
+    \item Final input channels: $(\text{max_signal}//\text{stack_num}) + (\text{max_idler}//\text{stack_num})$
 \end{itemize}
 \end{frame}
 
 % Data Flow
 \begin{frame}{Data Flow and Input Example}
 \begin{columns}
-\column{0.5\textwidth}
-\includegraphics[width=0.95\linewidth]{target_0.png}
-\centering {\small Target Example}
-\column{0.5\textwidth}
-\includegraphics[width=0.95\linewidth]{pred_0.png}
-\centering {\small Prediction Example}
+\column{0.3\textwidth}\centering {\small Target}
+\includegraphics[width=0.95\linewidth]{target_x.jpg}
+
+\column{0.3\textwidth}\centering {\small Machine Learning}
+\includegraphics[width=0.95\linewidth]{pred_x.png}
+
+\column{0.3\textwidth}\centering {\small QCI}
+\includegraphics[width=0.95\linewidth]{QCI_x.jpg}
+
 \end{columns}
-\vspace{0.5em}
-\textbf{Input tensor structure:}
-\begin{itemize}
-    \item $X$: [C, H, W], C is the stacked channel number
-    \item target: [1, H, W]
-\end{itemize}
+
+\begin{columns}
+\column{0.3\textwidth}\centering
+\includegraphics[width=0.95\linewidth]{target_9.jpg}
+
+\column{0.3\textwidth}\centering 
+\includegraphics[width=0.95\linewidth]{pred_9.png}
+
+\column{0.3\textwidth}\centering
+\includegraphics[width=0.95\linewidth]{no result.jpg}
+
+
+\end{columns}
+
+
 \end{frame}
 
 % Model Architecture
 \begin{frame}{Model Architecture -- UNet}
+
+\vspace{0.5em}
+\textbf{Input tensor structure:}
+\begin{columns}
+\column{0.4\textwidth}
 \begin{itemize}
+    \item $X$: [C, H, W], C is the stacked channel number
+    \item target: [1, H, W]
+
     \item Standard UNet structure, supports custom in\_channels for multi-channel input
     \item Symmetric encoder-decoder with skip connections
     \item Output is single-channel reconstructed image
 \end{itemize}
-\begin{center}
-\includegraphics[width=0.8\linewidth]{u-net-architecture.png}
-\end{center}
-\textit{(To customize, edit model.py)}
+\column{0.6\textwidth}
+\includegraphics[width=1\linewidth]{u-net-architecture.png}
+\end{columns}
+
+
 \end{frame}
 
 % Loss Function and Training
 \begin{frame}{Loss Function and Training}
 \textbf{Example loss function:}
 \begin{itemize}
-    \item \texttt{def loss\_fn(output, target):}
-    \item \texttt{\hspace{1em} return w\_ssim * (1 - ssim(output, target))}
-    \item \texttt{\hspace{2em} + w\_mse * MSELoss(output, target)}
-    \item \texttt{\hspace{2em} + w\_perc * perceptual\_loss(output, target)}
+    \item \texttt{def loss_fn(output, target):}
+    \item \texttt{\hspace{1em} return w_ssim * (1 - ssim(output, target))}
+    \item \texttt{\hspace{2em} + w_mse * MSELoss(output, target)}
+    \item \texttt{\hspace{2em} + w_perc * perceptual_loss(output, target)}
 \end{itemize}
 \vspace{0.5em}
 \begin{itemize}
@@ -94,23 +185,23 @@
 \begin{frame}{Hyperparameter Search and Experiment Logging}
 \textbf{Optuna search example:}
 \begin{itemize}
-    \item \texttt{study = optuna.create\_study(direction='minimize')}
-    \item \texttt{study.optimize(objective, n\_trials=20)}
+    \item \texttt{study = optuna.create_study(direction='minimize')}
+    \item \texttt{study.optimize(objective, n_trials=20)}
 \end{itemize}
 \vspace{0.5em}
 \begin{itemize}
-    \item Supports Optuna automated hyperparameter search: stack\_num, learning\_rate, max\_signal, loss weights, etc.
+    \item Supports Optuna automated hyperparameter search: stack_num, learning_rate, max_signal, loss weights, etc.
     \item All trial results and best params are logged
-    \item Each run generates a unique experiment name, all results archived in results/exp\_xxx/
+    \item Each run generates a unique experiment name, all results archived in results/exp_xxx/
     \item Each experiment saves:
     \begin{itemize}
         \item Training/validation loss curves (losses.png)
         \item PSNR curve (psnrs.png)
         \item Main hyperparameters and metrics (config.json, metrics.json)
         \item Best model weights (model.pth)
-        \item Typical predictions (pred\_*.png, target\_*.png)
+        \item Typical predictions (pred_*.png, target_*.png)
     \end{itemize}
-    \item File names include main parameters (e.g. exp\_20250531\_003234\_epochs50\_stack2\_lr0.00419\_sig50)
+    \item File names include main parameters (e.g. exp_20250531_003234_epochs50_stack2_lr0.00419_sig50)
     \item Can automatically extract latest experiment results for evaluation
 \end{itemize}
 \end{frame}
@@ -119,11 +210,11 @@
 \begin{frame}{Visualization and Example Outputs}
 \begin{columns}
     \column{0.5\textwidth}
-    \includegraphics[width=0.95\linewidth]{../results/losses.png}
+    \includegraphics[width=0.95\linewidth]{results/losses.png}
     \centering {\small Loss Curve}
     \vspace{1em}
     \column{0.5\textwidth}
-    \includegraphics[width=0.95\linewidth]{../results/psnrs.png}
+    \includegraphics[width=0.95\linewidth]{results/psnrs.png}
     \centering {\small PSNR Curve (example)}
 \end{columns}
 \vspace{0.5em}
@@ -136,7 +227,7 @@
 % Main Parameters and Tuning
 \begin{frame}{Main Parameters and Tuning}
 \begin{itemize}
-    \item Tune stack\_num, max\_signal, loss weights manually first, then use Optuna for fine-tuning
+    \item Tune stack_num, max_signal, loss weights manually first, then use Optuna for fine-tuning
     \item PSNR/SSIM are for evaluation, not recommended as loss
     \item Code is modular for easy customization (loss, model, data, etc.)
 \end{itemize}

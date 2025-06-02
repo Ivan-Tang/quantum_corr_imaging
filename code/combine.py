@@ -2,61 +2,71 @@ import cv2
 import numpy as np
 import os
 from tqdm import tqdm
+import time
 
 
-def batch_image_fusion(folder_path, start=1, end=100):
+
+def batch_image_fusion(base_path, fusion_num=None):
     """
     批量图像平均融合
-    :return: (融合后的图像, 有效图像数)
+    base_path: 图像文件夹路径
+    fusion_num: 需要融合的图像数量
+    return: 融合后的图像
     """
-    accumulator = None
-    valid_count = 0
-    base_size = None
 
-    with tqdm(total=end - start + 1, desc="Processing Images") as pbar:
-        for i in range(start, end + 1):
-            img_path = os.path.join(folder_path, f"signal/{i}.jpg")
+    start_time = time.time()
+    object_dirs = []
+    for name in sorted(os.listdir(base_path)):
+        obj_dir = os.path.join(base_path, name)
+        if os.path.isdir(obj_dir):
+            object_dirs.append(obj_dir)
+    
+    results_img = []
+    for obj_dir in object_dirs:
+        obj_dir = os.path.join(obj_dir, 'signal')
+        accumulator = None
+        base_size = None 
+        img_paths = sorted([
+                os.path.join(obj_dir, f) for f in os.listdir(obj_dir)
+                if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp'))
+        ])
 
-            try:
-                img = cv2.imread(img_path)
-                if img is None:
-                    raise ValueError("OpenCV读取失败")
+        if fusion_num is None:
+            fusion_num = len(img_paths) #如果没有fusion_num则用全部图片叠加
 
-                if base_size is None:
-                    base_size = (img.shape[1], img.shape[0])
-                    accumulator = np.zeros_like(img, dtype=np.float64)  # 改为float64提高精度
-                else:
-                    img = cv2.resize(img, base_size)
+        if len(img_paths) < fusion_num:
+            raise ValueError(f"图像数量 {len(img_paths)} 小于融合数量 {fusion_num}")
+        
+        for i in range(fusion_num):
+            img = cv2.imread(img_paths[i])
+            if base_size is None:
+                base_size = (img.shape[1], img.shape[0])
+                accumulator = np.zeros_like(img, dtype=np.float64)  # 改为float64提高精度
 
-                accumulator += img.astype(np.float64)
-                valid_count += 1
+            accumulator += img.astype(np.float64)
+        
+        accumulator /= (fusion_num / 20) 
+        results_img.append(np.clip(accumulator, 0, 255).astype(np.uint8))
+        print(f"融合完成 {obj_dir}")
 
-            except Exception as e:
-                print(f"\n跳过错误文件 {os.path.basename(img_path)}: {str(e)}")
-
-            pbar.update(1)
-
-    if valid_count == 0:
-        raise RuntimeError("没有找到有效图像")
-
-    avg_img = np.clip(accumulator , 0, 255).astype(np.uint8)
-    return avg_img, valid_count  # 返回两个值
+    end_time = time.time()
+    print(f"总耗时 {end_time - start_time:.2f}s")
+    avg_time = (end_time - start_time) / len(object_dirs)
+    print(f"平均耗时 {avg_time:.2f}s/个体")
+    
+    return results_img
 
 
 if __name__ == "__main__":
-    try:
-        image_folder = r"E:\1"
-        output_path = r"E:\1\fused.jpg"
+    img_path = 'data/test/'
+    save_path = 'reports/imgs/'
+    os.makedirs(save_path, exist_ok=True)
+    fusion_num = 100
+    results = batch_image_fusion(img_path, fusion_num)
+    print(len(results))
+    for i, img in enumerate(results):
+        filename = f'fused_image_{i}.png'
+        full_path = os.path.join(save_path, filename)
+        cv2.imwrite(full_path, img)
+        print(f"保存完成 {full_path}")
 
-        # 接收两个返回值
-        fused_img, count = batch_image_fusion(image_folder)
-
-        cv2.imwrite(output_path, fused_img)
-        print(f"\n成功融合 {count} 张图像，结果保存至: {output_path}")
-
-        cv2.imshow('Fused Result', fused_img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-
-    except Exception as e:
-        print(f"处理失败: {str(e)}")
