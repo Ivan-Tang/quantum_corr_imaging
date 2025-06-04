@@ -1,0 +1,324 @@
+\documentclass{beamer}
+
+\usepackage{graphicx}
+\usepackage{listings}
+\usetheme{Madrid}
+
+\title{End-to-End Correlated Imaging Reconstruction with UNet}
+\author{Yiwen Tang, Yufan Yao}
+\date{June 2025}
+
+\begin{document}
+
+% Title Page
+\frame{\titlepage}
+
+% Project Introduction
+
+\begin{frame}{Project Introduction}
+\begin{block}{Research directions in correlated imaging:}
+\begin{itemize}
+    \begin{itemize}
+        \item \textcolor{blue}{Light source development} (X-ray, sunlight, \textcolor{red}{weak-light})
+        \item Dynamic scene reconstruction
+        \item \textcolor{blue}{Reconstruction algorithms} (compressed sensing, \textcolor{red}{machine learning})
+    \end{itemize}
+   
+\end{itemize}
+\end{block}
+\begin{block}{Our Contribution}
+\begin{itemize}
+    \item This project implements an end-to-end quantum correlated imaging (Ghost Imaging) reconstruction system based on UNet.
+    \item Supports multi-frame signal/idler image stacking as multi-channel input, adapted to UNet.
+    \item Flexible loss function combination (SSIM, MSE, perceptual loss, etc.), supports weighted loss.
+    \item Automated experiment logging and hyperparameter search for easy comparison and reproducibility.
+\end{itemize}
+\end{block}
+
+\end{frame}
+
+\begin{frame}{Dataset Construction}
+
+    \begin{itemize}
+            \item \textbf{MATLAB-based CCD Control:}
+            \begin{itemize}
+                \item Developed host computer software for fully automatic capture and save
+                \item Simultaneous capture from signal and idler cameras
+            \end{itemize}
+            
+
+            
+            \item \textbf{Challenging Imaging Conditions:}
+            \begin{itemize}
+                \item Minimal aperture, low laser power and low brightness(Traditional QCI setting:12,000,Our setting: 2,000-5,000).
+                \item Proves algorithm robustness in low-signal regimes
+            \end{itemize}
+     \end{itemize}
+
+        \centering
+     
+        \begin{tabular}{|l|c|c|c|}
+            \hline
+            Camera & Idler &Signal（Traditional QCI） & Signal(Macheine Learning)\\
+            \hline
+            Brightness & 12000 & 12000 & 2000-5000 \\
+            \hline
+            Contrast(\%) & 100 &100 & 100 \\
+            \hline
+            Gain(dB) & 10 & 10 & 10 \\
+            \hline
+            Time & & ~5min & ~60s &
+            \hline 
+        \end{tabular}
+
+        
+           \small{Camera Configuration}
+\end{frame}
+
+
+\begin{frame}{Dataset Construction}
+
+        \begin{itemize}
+                \item Laser-cut wood samples with diverse geometries, which ensures reconstruction fidelity
+                \item 50,000+ 512x384 Black-and-white images captured
+        \end{itemize}
+        \begin{columns}
+            \column{0.3\textwidth}
+            \includegraphics[width=0.95\linewidth]{samples.png}
+            \small{Samples}
+            \column{0.7\textwidth}
+            \includegraphics[width=0.95\linewidth]{image.png}
+            \small{Some of the images captured by Idler camera}
+        \end{columns}
+\end{frame}
+
+% Data Structure
+\begin{frame}{Data Structure and Preprocessing}
+\textbf{Each sample directory:}
+\begin{itemize}
+  \item \texttt{object\_dir/}
+  \begin{itemize}
+    \item \texttt{signal/} \hspace{1em} \% multi-frame signal images
+    \item \texttt{idler/} \hspace{1em} \% multi-frame idler images
+    \item \texttt{target.JPG}
+  \end{itemize}
+\end{itemize}
+\vspace{0.5em}
+\textbf{Multi-frame stacking and merging:}
+\begin{itemize}
+    \item Take the first max\_signal/max\_idler signal/idler images
+    \item Every stack\_num images are averaged to form one channel
+    \item Final input channels: $(\text{max\_signal}//\text{stack\_num}) + (\text{max\_idler}//\text{stack\_num})$
+\end{itemize}
+\end{frame}
+
+% Data Flow
+\begin{frame}{Data Flow and Input Example}
+\begin{columns}
+\column{0.3\textwidth}\centering {\small Target}
+\includegraphics[width=0.95\linewidth]{target_x.jpg}
+
+\column{0.3\textwidth}\centering {\small Machine Learning}
+\includegraphics[width=0.95\linewidth]{pred_x.png}
+
+\column{0.3\textwidth}\centering {\small Traditonal QCI}
+\includegraphics[width=0.95\linewidth]{QCI_x.jpg}
+
+\end{columns}
+
+\begin{columns}
+\column{0.3\textwidth}\centering
+\includegraphics[width=0.95\linewidth]{target_9.jpg}
+
+\column{0.3\textwidth}\centering 
+\includegraphics[width=0.95\linewidth]{pred_9.png}
+
+\column{0.3\textwidth}\centering
+\includegraphics[width=0.95\linewidth]{no result.jpg}
+
+
+\end{columns}
+
+
+\end{frame}
+
+% Model Architecture
+\begin{frame}{Model Architecture -- UNet}
+
+\vspace{0.5em}
+\textbf{Input tensor structure:}
+\begin{columns}
+\column{0.4\textwidth}
+\begin{itemize}
+    \item $X$: [C, H, W], C is the stacked channel number
+    \item target: [1, H, W]
+
+    \item Standard UNet structure, supports custom in\_channels for multi-channel input
+    \item Symmetric encoder-decoder with skip connections
+    \item Output is single-channel reconstructed image
+\end{itemize}
+\column{0.6\textwidth}
+\includegraphics[width=1\linewidth]{u-net-architecture.png}
+\end{columns}
+
+
+\end{frame}
+
+% Loss Function and Training
+\begin{frame}{Loss Function and Training}
+\textbf{Example loss function:}
+\begin{itemize}
+    \item \texttt{def loss\_fn(output, target):}
+    \item \texttt{\hspace{1em} return w\_ssim * (1 - ssim(output, target))}
+    \item \texttt{\hspace{2em} + w\_mse * MSELoss(output, target)}
+    \item \texttt{\hspace{2em} + w\_perc * perceptual\_loss(output, target)}
+\end{itemize}
+\vspace{0.5em}
+\begin{itemize}
+    \item Supports SSIM, MSE, perceptual loss (VGG16), and weighted combination
+    \item Automatically saves best model, loss/PSNR curves, etc.
+    \item Each experiment is archived for comparison
+\end{itemize}
+\end{frame}
+
+% Hyperparameter Search and Logging
+\begin{frame}{Hyperparameter Search and Experiment Logging}
+\textbf{Optuna search example:}
+\begin{itemize}
+    \item \texttt{study = optuna.create\_study(direction='minimize')}
+    \item \texttt{study.optimize(objective, n\_trials=20)}
+\end{itemize}
+\vspace{0.5em}
+\begin{itemize}
+    \item Supports Optuna automated hyperparameter search: stack\_num, learning\_rate, max\_signal, loss weights, etc.
+    \item All trial results and best params are logged
+    \item Each run generates a unique experiment name, all results archived in results/exp\_xxx/
+    \item Each experiment saves:
+    \begin{itemize}
+        \item Training/validation loss curves (losses.png)
+        \item PSNR curve (psnrs.png)
+        \item Main hyperparameters and metrics (config.json, metrics.json)
+        \item Best model weights (model.pth)
+        \item Typical predictions (pred\_*.png, target\_*.png)
+    \end{itemize}
+    \item File names include main parameters (e.g. exp\_20250531\_003234\_epochs50\_stack2\_lr0.00419\_sig50)
+    \item Can automatically extract latest experiment results for evaluation
+\end{itemize}
+\end{frame}
+
+% Visualization and Examples
+\begin{frame}{Visualization and Example Outputs}
+\begin{columns}
+    \column{0.5\textwidth}
+    \includegraphics[width=0.95\linewidth]{results/losses.png}
+    \centering {\small Loss Curve}
+    \vspace{1em}
+    \column{0.5\textwidth}
+    \includegraphics[width=0.95\linewidth]{results/psnrs.png}
+    \centering {\small PSNR Curve (During Training)}
+\end{columns}
+\vspace{0.5em}
+\begin{itemize}
+    \item See previous page for prediction vs. target
+    \item More examples in results/ directory
+\end{itemize}
+\end{frame}
+
+% Main Parameters and Tuning
+\begin{frame}{Main Parameters and Tuning}
+\begin{itemize}
+    \item Tune stack\_num, max\_signal, loss weights manually first, then use Optuna for fine-tuning
+    \item PSNR/SSIM are for evaluation, not recommended as loss
+    \item Code is modular for easy customization (loss, model, data, etc.)
+\end{itemize}
+\end{frame}
+
+% PSNR Explanation
+\begin{frame}{PSNR Metric Explanation}
+    \textbf{PSNR (Peak Signal-to-Noise Ratio)} is a common metric for image reconstruction quality, in dB.
+    \begin{itemize}
+        \item \textbf{Definition:} $\mathrm{PSNR} = 10 \log_{10}(\mathrm{MAX}^2 / \mathrm{MSE})$
+        \item \textbf{MAX} is pixel max (e.g. 1.0 or 255), MSE is mean squared error
+        \item \textbf{Range:} Theoretical $[0, +\infty)$, practical $10\sim40$ dB
+        \item \textbf{Typical intervals:}
+        \begin{itemize}
+            \item $<5$ dB: visible distortion
+            \item $5\sim10$ dB: acceptable
+            \item $10\sim15$ dB: high quality
+            \item $>15$ dB: nearly perfect
+        \end{itemize}
+        \item Higher PSNR means better reconstruction
+        \item All PSNR in this project are for [0,1] normalized grayscale images
+    \end{itemize}
+\end{frame}
+
+% Inference Time Comparison
+\begin{frame}{Inference Time Comparison}
+\begin{itemize}
+    \item \textbf{UNet-based end-to-end model:} ~0.5 seconds per image (on GPU)
+    \item \textbf{Fuse:} ~0.15 seconds per image 
+    \item \textbf{Traditional ghost imaging reconstruction:} ~5 minutes per image (CPU, iterative algorithms)
+    \item \textbf{Speedup:} 600x--1200x faster
+    \item Deep learning enables real-time or near real-time quantum imaging, making practical applications feasible.
+\end{itemize}
+\end{frame}
+
+% Method Comparison
+\begin{frame}{Method Comparison: PSNR and Inference Time}
+\begin{table}[]
+    \centering
+    \begin{tabular}{lcc}
+        \hline
+        \textbf{Method} & \textbf{PSNR (dB)} & \textbf{Time per Image} \\
+        \hline
+        Direct Stacking & $\sim$5-15 & $<0.1$ s (GPU/CPU) \\
+        UNet (Ours)     & $\sim$5-20 & $\sim$0.5 s (GPU) \\
+        Traditional Ghost Imaging & $\sim$10-20 & 5--10 min (CPU) \\
+        \hline
+    \end{tabular}
+    \caption{Comparison of three methods on PSNR and inference/compute time.}
+\end{table}
+\vspace{0.5em}
+\begin{itemize}
+    \item UNet achieves the best quality and is orders of magnitude faster than traditional algorithms.
+    \item Direct stacking is fast but with poor quality; traditional methods are slow and moderate in quality.
+\end{itemize}
+\end{frame}
+
+%
+\begin{frame}
+\includegraphics[width=0.95\linewidth]{psnr_comparison_one.png}
+\includegraphics[width=0.95\linewidth]{psnr_comparison_x.png}
+
+
+\end{frame}
+
+
+% Conclusion
+\begin{frame}{Conclusion}
+\begin{itemize}
+    \item End-to-end quantum correlated imaging reconstruction, auto experiment logging and hyperparameter search implemented. Full pipeline constructed.
+    \item Our breakthrough: Speed dramatically accelerated (5min → 70s) while maintaining comparable imaging quality (PSNR). Higher imaging success rate under extreme low-light conditions.
+\end{itemize}
+
+\begin{itemize}    
+    
+    \item Welcome to discuss and contribute, see README.md
+    
+    \item Github: \url{https://github.com/Ivan-Tang/quantum_corr_imaging}
+    
+\end{itemize}
+\end{frame}
+\begin{frame}{Future Works}
+
+Improved this U-Net model on Masking/Random Noise conditions
+\includegraphics[width=0.95\linewidth]{Mask.png}
+
+\end{frame}
+
+
+
+
+
+
+\end{document}

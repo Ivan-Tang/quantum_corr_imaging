@@ -29,12 +29,21 @@ def psnr_metric(output_path, fused_img_path, qci_img_path, unet_img_path, target
     # 加载所有图片
     target_img = image_to_tensor(target_path)
     fused_tensor = image_to_tensor(fused_img_path)
-    qci_tensor = image_to_tensor(qci_img_path)
     unet_tensor = image_to_tensor(unet_img_path)
+
+    if qci_img_path:
+        qci_tensor = image_to_tensor(qci_img_path)
+        psnr_qci = psnr(qci_tensor, target_img, data_range=1.0)
+    else:
+        # 创建一个与目标图像相同大小的白色图像张量
+        # 假设target_img的形状是 [C, H, W]
+        _, H, W = target_img.shape
+        qci_tensor = torch.ones(3, H, W) # 白色图像 (RGB均为1)
+        psnr_qci = None # 没有PSNR值
 
     # 计算PSNR值
     psnr_fused = psnr(fused_tensor, target_img, data_range=1.0)
-    psnr_qci = psnr(qci_tensor, target_img, data_range=1.0)
+    # psnr_qci = psnr(qci_tensor, target_img, data_range=1.0) # 已在条件语句中处理
     psnr_unet = psnr(unet_tensor, target_img, data_range=1.0)
 
     # 创建可视化
@@ -44,7 +53,7 @@ def psnr_metric(output_path, fused_img_path, qci_img_path, unet_img_path, target
     # 图片和标题
     images = [fused_tensor, qci_tensor, unet_tensor, target_img]
     titles = ['Fused', 'QCI', 'UNet', 'Target']
-    psnr_values = [psnr_fused.item(), psnr_qci.item(), psnr_unet.item(), None]  # Target没有PSNR值
+    psnr_values = [psnr_fused.item(), psnr_qci.item() if psnr_qci is not None else None, psnr_unet.item(), None]  # Target没有PSNR值
 
     for i, (ax, img_tensor, title, psnr_val) in enumerate(zip(axes, images, titles, psnr_values)):
         # 显示图片
@@ -60,6 +69,10 @@ def psnr_metric(output_path, fused_img_path, qci_img_path, unet_img_path, target
             ax.text(0.5, -0.1, f'PSNR: {psnr_val:.2f} dB', 
                     transform=ax.transAxes, ha='center', va='top',
                     fontsize=12, bbox=dict(boxstyle='round,pad=0.3', facecolor='lightblue'))
+        elif title == 'QCI' and not qci_img_path:
+             ax.text(0.5, -0.1, 'Image Not Available',
+                    transform=ax.transAxes, ha='center', va='top',
+                    fontsize=12, bbox=dict(boxstyle='round,pad=0.3', facecolor='lightgrey'))
         else:
             ax.text(0.5, -0.1, 'Reference Image', 
                     transform=ax.transAxes, ha='center', va='top',
@@ -72,20 +85,37 @@ def psnr_metric(output_path, fused_img_path, qci_img_path, unet_img_path, target
     plt.close()
 
     # 打印PSNR结果
-    print("\nPSNR Results:")
+    print("\\nPSNR Results:")
     print(f"Fused vs Target: {psnr_fused:.2f} dB")
-    print(f"QCI vs Target: {psnr_qci:.2f} dB")
+    if psnr_qci is not None:
+        print(f"QCI vs Target: {psnr_qci:.2f} dB")
+    else:
+        print("QCI vs Target: N/A (Image not provided)")
     print(f"UNet vs Target: {psnr_unet:.2f} dB")
 
 if __name__ == '__main__':
+    
     fused_img_path = 'reports/imgs/fused_image_1.png'
     qci_img_path = 'reports/imgs/quantum_corr_x.jpg'
     unet_img_path = 'reports/imgs/pred_1.png'
-    target_path = 'reports/imgs/target_1.jpg'
+    target_path = 'reports/imgs/target_1.png'
     psnr_metric('reports/imgs/psnr_comparison_x.png', fused_img_path, qci_img_path, unet_img_path, target_path)
 
     fused_img_path = 'reports/imgs/fused_image_3.png'
     qci_img_path = 'reports/imgs/quantum_corr_one.jpg'
     unet_img_path = 'reports/imgs/pred_3.png'
-    target_path = 'reports/imgs/target_3.JPG'
+    target_path = 'reports/imgs/target_3.png'
     psnr_metric('reports/imgs/psnr_comparison_one.png', fused_img_path, qci_img_path, unet_img_path, target_path)
+
+
+    fused_img_path = 'reports/imgs/fused_image_0.png'
+    qci_img_path = ''
+    unet_img_path = 'reports/imgs/pred_0.png'
+    target_path = 'reports/imgs/target_0.png'
+    psnr_metric('reports/imgs/psnr_comparison_9.png', fused_img_path, qci_img_path, unet_img_path, target_path)
+
+    fused_img_path = 'reports/imgs/fused_image_2.png'
+    qci_img_path = ''
+    unet_img_path = 'reports/imgs/pred_2.png'
+    target_path = 'reports/imgs/target_2.png'
+    psnr_metric('reports/imgs/psnr_comparison_5.png', fused_img_path, qci_img_path, unet_img_path, target_path)
