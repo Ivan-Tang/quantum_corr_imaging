@@ -144,7 +144,8 @@ def train(config, trial=None):
 
     result = {
         'best_val_loss': best_val_loss,
-        'exp_dir': exp_dir
+        'exp_dir': exp_dir,
+        'val_psnr': val_psnr,
     }
     return result
 

@@ -36,17 +36,13 @@ def psnr_metric(output_path, fused_img_path, qci_img_path, unet_img_path, target
         psnr_qci = psnr(qci_tensor, target_img, data_range=1.0)
     else:
         # 创建一个与目标图像相同大小的白色图像张量
-        # 假设target_img的形状是 [C, H, W]
         _, H, W = target_img.shape
         qci_tensor = torch.ones(3, H, W) # 白色图像 (RGB均为1)
         psnr_qci = None # 没有PSNR值
 
-    # 计算PSNR值
     psnr_fused = psnr(fused_tensor, target_img, data_range=1.0)
-    # psnr_qci = psnr(qci_tensor, target_img, data_range=1.0) # 已在条件语句中处理
     psnr_unet = psnr(unet_tensor, target_img, data_range=1.0)
 
-    # 创建可视化
     fig, axes = plt.subplots(1, 4, figsize=(16, 4))
     fig.suptitle('Image Comparison with PSNR Values', fontsize=16, fontweight='bold')
 
@@ -94,7 +90,7 @@ def psnr_metric(output_path, fused_img_path, qci_img_path, unet_img_path, target
     print(f"UNet vs Target: {psnr_unet:.2f} dB")
 
 if __name__ == '__main__':
-    
+
     fused_img_path = 'reports/imgs/fused_image_1.png'
     qci_img_path = 'reports/imgs/quantum_corr_x.jpg'
     unet_img_path = 'reports/imgs/pred_1.png'

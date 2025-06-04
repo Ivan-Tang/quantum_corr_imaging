@@ -22,20 +22,21 @@ def objective(trial):
     #训练模型
     try:
         result = train(trial_config)
-        val_loss = result['best_val_loss']
+        val_loss = result['val_loss']
+        val_psnr = result['val_psnr']
         exp_dir = result['exp_dir']
         # 训练后自动推理，生成预测图片
         run_metric(exp_dir=exp_dir)
     except optuna.TrialPruned:
         raise
-    return val_loss
+    return val_psnr
 
 if __name__ == '__main__':
-    study = optuna.create_study(direction='minimize')
+    study = optuna.create_study(direction='maximize')
     study.optimize(objective, n_trials=20)
     print(' Best trial:')
     trial = study.best_trial
-    print(f' Loss: {trial.value}')
+    print(f' PSNR: {trial.value}')
     print(' Params:')
     for key, value in trial.params.items():
         print(f' {key}: {value}')
